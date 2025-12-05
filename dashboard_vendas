@@ -1,0 +1,61 @@
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+
+# -------------------------------
+# 📊 Dashboard de Vendas
+# -------------------------------
+
+def carregar_dados(caminho: str):
+    """Carrega os dados de vendas a partir de um CSV."""
+    return pd.read_csv(caminho)
+
+def main():
+    st.set_page_config(page_title="Dashboard de Vendas", layout="wide")
+    st.title("📊 Dashboard de Vendas")
+    st.markdown("Transformando dados brutos em informações visuais claras e úteis.")
+
+    # Upload de arquivo CSV
+    arquivo = st.file_uploader("Carregue o arquivo de vendas (CSV)", type=["csv"])
+    
+    if arquivo is not None:
+        df = carregar_dados(arquivo)
+
+        # Exibe os dados brutos
+        st.subheader("📂 Dados Brutos")
+        st.dataframe(df)
+
+        # Seleção de filtros
+        st.sidebar.header("Filtros")
+        produto = st.sidebar.selectbox("Selecione o Produto", options=["Todos"] + list(df["Produto"].unique()))
+        regiao = st.sidebar.selectbox("Selecione a Região", options=["Todos"] + list(df["Região"].unique()))
+
+        df_filtrado = df.copy()
+        if produto != "Todos":
+            df_filtrado = df_filtrado[df_filtrado["Produto"] == produto]
+        if regiao != "Todos":
+            df_filtrado = df_filtrado[df_filtrado["Região"] == regiao]
+
+        # Gráfico de vendas por mês
+        st.subheader("📈 Vendas por Mês")
+        vendas_mes = df_filtrado.groupby("Mês")["Vendas"].sum().reset_index()
+        fig = px.bar(vendas_mes, x="Mês", y="Vendas", title="Total de Vendas por Mês", text_auto=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Gráfico de vendas por região
+        st.subheader("🌍 Vendas por Região")
+        vendas_regiao = df_filtrado.groupby("Região")["Vendas"].sum().reset_index()
+        fig2 = px.pie(vendas_regiao, names="Região", values="Vendas", title="Distribuição de Vendas por Região")
+        st.plotly_chart(fig2, use_container_width=True)
+
+        # Gráfico de vendas por produto
+        st.subheader("📦 Vendas por Produto")
+        vendas_produto = df_filtrado.groupby("Produto")["Vendas"].sum().reset_index()
+        fig3 = px.bar(vendas_produto, x="Produto", y="Vendas", title="Total de Vendas por Produto", text_auto=True)
+        st.plotly_chart(fig3, use_container_width=True)
+
+    else:
+        st.info("Por favor, carregue um arquivo CSV para visualizar o dashboard.")
+
+if __name__ == "__main__":
+    main()
